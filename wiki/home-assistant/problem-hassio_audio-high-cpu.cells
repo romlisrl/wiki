@@ -130,6 +130,36 @@
         "storage-driver": "overlay2"
     }
 
+Мы уменьшили загрузку CPU, если вы не используете звук то предпочтительнее присостановить модуль pulseaudio:
+docker exec -it hassio_audio pactl load-module module-suspend-on-idle
+
+Создадим сервис приостанваливающий модуль после перезагрузки:
+    sudo nano /etc/hassio_audio_suspend.sh
+    
+Вставляем следующее:
+#!/bin/bash
+sleep 4m
+sudo docker exec -i hassio_audio pactl load-module module-suspend-on-idle
+
+Даем привелегии запуска и создаем сервис:
+	sudo chmod +x /etc/hassio_audio_suspend.sh
+	sudo nano /etc/systemd/system/hassio_audio_suspend.service
+    
+Описание сервиса:
+[Unit]
+Description=Disable Pulse Audio
+
+[Service]
+Type=simple
+ExecStart=/etc/hassio_audio_suspend.sh
+
+[Install]
+WantedBy=multi-user.target
+
+Регистрируем сервис
+	sudo systemctl enable hassio_audio_suspend.service
+
+
 И перезагрузить raspberry pi.
 
 После загрузки контейнер HA перестает потреблять много CPU:
